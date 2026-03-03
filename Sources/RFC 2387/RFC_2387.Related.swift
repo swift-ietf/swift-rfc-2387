@@ -188,8 +188,8 @@ extension RFC_2387.Related {
         contentType: RFC_2045.ContentType,
         transferEncoding: RFC_2045.ContentTransferEncoding = .base64,
         content: [UInt8]
-    ) throws -> RFC_2046.BodyPart {
-        var headers = try RFC_2046.BodyPart.Headers(ascii: [])
+    ) -> RFC_2046.BodyPart {
+        var headers = RFC_2046.BodyPart.Headers()
         headers.contentType = contentType
         headers.contentTransferEncoding = transferEncoding
         // String(contentID) produces "<id@domain>" with angle brackets per RFC 5322
@@ -240,7 +240,7 @@ extension RFC_2387.Related {
         boundary: RFC_2046.Boundary,
         rootType: RFC_2045.ContentType? = nil,
         start: RFC_2387.ContentID? = nil
-    ) throws -> RFC_2046.Multipart {
+    ) throws(RFC_2046.Multipart.Error) -> RFC_2046.Multipart {
         let allParts = [rootPart] + relatedParts
 
         // RFC 2387: Auto-detect type from root part if not provided
