@@ -16,7 +16,7 @@
 /// Following the standard pattern, RFC 2387 re-exports its dependencies
 /// so that consumers get access to MIME types without additional imports.
 
-@_exported public import ASCII
+@_exported public import ASCII_Serializer_Primitives
 @_exported public import RFC_2045
 @_exported public import RFC_2046
 @_exported public import RFC_5322
