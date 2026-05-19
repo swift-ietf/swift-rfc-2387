@@ -287,8 +287,8 @@ extension RFC_2387.Related: Binary.ASCII.Serializable {
     static public func serialize<Buffer>(
         ascii related: RFC_2387.Related,
         into buffer: inout Buffer
-    ) where Buffer: RangeReplaceableCollection, Buffer.Element == UInt8 {
-        buffer.append(related.multipart)
+    ) where Buffer: RangeReplaceableCollection, Buffer.Element == Byte {
+        buffer.append(ascii: related.multipart)
     }
     /// Parsing context for multipart/related messages
     ///
@@ -312,14 +312,14 @@ extension RFC_2387.Related: Binary.ASCII.Serializable {
     ///
     /// ## Category Theory
     ///
-    /// Context-dependent parsing: `(Context, [UInt8]) → Related`
+    /// Context-dependent parsing: `(Context, [Byte]) → Related`
     ///
     /// - Parameters:
     ///   - bytes: The multipart message body as ASCII bytes
     ///   - context: Parsing context containing boundary
     /// - Throws: `RFC_2387.Related.Error` if parsing fails
     public init<Bytes: Collection>(ascii bytes: Bytes, in context: Context) throws(Error)
-    where Bytes.Element == UInt8 {
+    where Bytes.Element == Byte {
         // Delegate parsing to RFC_2046.Multipart
         let multipartContext = RFC_2046.Multipart.Context(
             boundary: context.boundary,
