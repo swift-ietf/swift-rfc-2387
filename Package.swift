@@ -17,10 +17,10 @@ let package = Package(
         )
     ],
     dependencies: [
-        .package(path: "../../swift-primitives/swift-ascii-serializer-primitives"),
-        .package(path: "../swift-rfc-2045"),
-        .package(path: "../swift-rfc-2046"),
-        .package(path: "../swift-rfc-5322")
+        .package(url: "https://github.com/swift-primitives/swift-ascii-serializer-primitives.git", branch: "main"),
+        .package(url: "https://github.com/swift-ietf/swift-rfc-2045.git", branch: "main"),
+        .package(url: "https://github.com/swift-ietf/swift-rfc-2046.git", branch: "main"),
+        .package(url: "https://github.com/swift-ietf/swift-rfc-5322.git", branch: "main")
     ],
     targets: [
         .target(
