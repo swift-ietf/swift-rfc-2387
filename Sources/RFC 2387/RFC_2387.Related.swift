@@ -187,7 +187,7 @@ extension RFC_2387.Related {
         contentID: RFC_2387.ContentID,
         contentType: RFC_2045.ContentType,
         transferEncoding: RFC_2045.ContentTransferEncoding = .base64,
-        content: [UInt8]
+        content: [Byte]
     ) -> RFC_2046.BodyPart {
         var headers = RFC_2046.BodyPart.Headers()
         headers.contentType = contentType
@@ -278,77 +278,22 @@ extension RFC_2045.Parameter.Name {
     public static let startInfo = RFC_2045.Parameter.Name(rawValue: "start-info")
 }
 
-// MARK: - Binary.ASCII.Serializable
+// MARK: - Binary.Serializable ([FAM-012] — Related is byte-domain, Binary-only; composes Multipart)
 
-extension RFC_2387.Related: Binary.ASCII.Serializable {
-    /// Serialize to canonical ASCII byte representation
+extension RFC_2387.Related: Binary.Serializable {
+    /// Serializes the whole multipart/related body as wire bytes.
     ///
-    /// Serialization delegates to the underlying RFC_2046.Multipart.
-    static public func serialize<Buffer>(
-        ascii related: RFC_2387.Related,
+    /// [FAM-012] `Related` composes `RFC_2046.Multipart`, which is byte-domain (its
+    /// parts may carry binary / MIME-encoded content), so `Related` conforms to
+    /// `Binary.Serializable` ONLY — there is no ASCII-text sibling. Serialization is
+    /// context-free — the value carries its own boundary. Clause-9: composes
+    /// `RFC_2046.Multipart`'s own `Byte` verb directly into the sink — never a
+    /// `[Byte]`-intermediate detour, never a sub-part `rawValue` reach-in.
+    public static func serialize<Buffer: RangeReplaceableCollection>(
+        _ related: Self,
         into buffer: inout Buffer
-    ) where Buffer: RangeReplaceableCollection, Buffer.Element == Byte {
-        buffer.append(ascii: related.multipart)
-    }
-    /// Parsing context for multipart/related messages
-    ///
-    /// Multipart/related parsing requires the boundary delimiter.
-    public struct Context: Sendable {
-        /// The boundary delimiter separating body parts
-        public let boundary: RFC_2046.Boundary
-
-        /// Creates a parsing context
-        ///
-        /// - Parameter boundary: The boundary delimiter for the multipart message
-        public init(boundary: RFC_2046.Boundary) {
-            self.boundary = boundary
-        }
-    }
-
-    /// Parses multipart/related data from bytes with context
-    ///
-    /// This is the primitive parser that works at the byte level.
-    /// Parsing delegates to RFC_2046.Multipart then extracts RFC 2387 semantics.
-    ///
-    /// ## Category Theory
-    ///
-    /// Context-dependent parsing: `(Context, [Byte]) → Related`
-    ///
-    /// - Parameters:
-    ///   - bytes: The multipart message body as ASCII bytes
-    ///   - context: Parsing context containing boundary
-    /// - Throws: `RFC_2387.Related.Error` if parsing fails
-    public init<Bytes: Collection>(ascii bytes: Bytes, in context: Context) throws(Error)
-    where Bytes.Element == Byte {
-        // Delegate parsing to RFC_2046.Multipart
-        let multipartContext = RFC_2046.Multipart.Context(
-            boundary: context.boundary,
-            subtype: .related
-        )
-
-        let multipart: RFC_2046.Multipart
-        do {
-            multipart = try RFC_2046.Multipart(ascii: bytes, in: multipartContext)
-        } catch {
-            throw Error.multipartError(error)
-        }
-
-        // RFC 2387: Root is first part (or part matching start parameter)
-        guard let firstPart = multipart.parts.first else {
-            throw Error.emptyParts
-        }
-
-        guard let rootType = firstPart.contentType else {
-            throw Error.missingRootType
-        }
-
-        self.init(
-            __unchecked: (),
-            multipart: multipart,
-            rootType: rootType,
-            start: nil,
-            startInfo: nil
-        )
+    ) where Buffer.Element == Byte {
+        RFC_2046.Multipart.serialize(related.multipart, into: &buffer)  // clause-9: Multipart Byte verb
     }
 }
 

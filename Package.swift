@@ -20,7 +20,9 @@ let package = Package(
         .package(url: "https://github.com/swift-primitives/swift-ascii-serializer-primitives.git", branch: "main"),
         .package(url: "https://github.com/swift-ietf/swift-rfc-2045.git", branch: "main"),
         .package(url: "https://github.com/swift-ietf/swift-rfc-2046.git", branch: "main"),
-        .package(url: "https://github.com/swift-ietf/swift-rfc-5322.git", branch: "main")
+        .package(url: "https://github.com/swift-ietf/swift-rfc-5322.git", branch: "main"),
+        .package(url: "https://github.com/swift-primitives/swift-parser-primitives.git", branch: "main"),
+        .package(url: "https://github.com/swift-primitives/swift-byte-parser-primitives.git", branch: "main")
     ],
     targets: [
         .target(
@@ -29,7 +31,9 @@ let package = Package(
                 .product(name: "ASCII Serializer Primitives", package: "swift-ascii-serializer-primitives"),
                 .product(name: "RFC 2045", package: "swift-rfc-2045"),
                 .product(name: "RFC 2046", package: "swift-rfc-2046"),
-                .product(name: "RFC 5322", package: "swift-rfc-5322")
+                .product(name: "RFC 5322", package: "swift-rfc-5322"),
+                .product(name: "Parser Primitives", package: "swift-parser-primitives"),
+                .product(name: "Byte Parser Primitives", package: "swift-byte-parser-primitives")
     ]
         ),
         .testTarget(
