@@ -293,7 +293,8 @@ extension RFC_2387.Related: Binary.Serializable {
         _ related: Self,
         into buffer: inout Buffer
     ) where Buffer.Element == Byte {
-        RFC_2046.Multipart.serialize(related.multipart, into: &buffer)  // clause-9: Multipart Byte verb
+        // clause-9: Multipart Byte verb
+        RFC_2046.Multipart.serialize(related.multipart, into: &buffer)
     }
 }
 

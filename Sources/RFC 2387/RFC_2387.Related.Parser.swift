@@ -14,8 +14,8 @@
 // RFC_2387.Related.Parser.swift
 // swift-rfc-2387
 
-public import Parser_Primitives
 public import Byte_Parser_Primitives
+public import Parser_Primitives
 public import RFC_2046
 
 extension RFC_2387.Related {
