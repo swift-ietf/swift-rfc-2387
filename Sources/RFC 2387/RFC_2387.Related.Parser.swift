@@ -54,11 +54,6 @@ extension RFC_2387.Related {
     /// `rootType` from the first part). This mirrors the retired `Context`, which
     /// stored the boundary alone.
     public struct Parser: Parser_Primitives.Parser.`Protocol`, Sendable {
-        public typealias Input = Byte.Input
-        public typealias Output = RFC_2387.Related
-        public typealias Failure = RFC_2387.Related.Error
-        public typealias Body = Never
-
         /// The boundary delimiter separating body parts.
         public let boundary: RFC_2046.Boundary
 
@@ -68,48 +63,57 @@ extension RFC_2387.Related {
         public init(boundary: RFC_2046.Boundary) {
             self.boundary = boundary
         }
-
-        /// Parses a multipart/related body from the byte cursor `input`, consuming it.
-        ///
-        /// [FAM-012] `Parser.`Protocol`` cursor-form leaf parser: composes
-        /// `RFC_2046.Multipart.Parser` (subtype `.related`) on the same cursor
-        /// (clause-9), then lifts the `Multipart` into `Related`.
-        ///
-        /// - Parameter input: The byte cursor to consume.
-        /// - Returns: The parsed multipart/related value.
-        /// - Throws: `RFC_2387.Related.Error` if parsing fails.
-        public borrowing func parse(
-            _ input: inout Byte.Input
-        ) throws(RFC_2387.Related.Error) -> RFC_2387.Related {
-            // Clause-9: compose RFC_2046.Multipart's own Byte-cursor parse verb.
-            let multipart: RFC_2046.Multipart
-            do {
-                multipart = try RFC_2046.Multipart.Parser(
-                    boundary: boundary,
-                    subtype: .related
-                ).parse(&input)
-            } catch {
-                throw RFC_2387.Related.Error.multipartError(error)
-            }
-
-            // RFC 2387: the root is the first part.
-            guard let firstPart = multipart.parts.first else {
-                throw RFC_2387.Related.Error.emptyParts
-            }
-            guard let rootType = firstPart.contentType else {
-                throw RFC_2387.Related.Error.missingRootType
-            }
-
-            return RFC_2387.Related(
-                __unchecked: (),
-                multipart: multipart,
-                rootType: rootType,
-                start: nil,
-                startInfo: nil
-            )
-        }
     }
+}
 
+extension RFC_2387.Related.Parser {
+    public typealias Input = Byte.Input
+    public typealias Output = RFC_2387.Related
+    public typealias Failure = RFC_2387.Related.Error
+    public typealias Body = Never
+
+    /// Parses a multipart/related body from the byte cursor `input`, consuming it.
+    ///
+    /// [FAM-012] `Parser.`Protocol`` cursor-form leaf parser: composes
+    /// `RFC_2046.Multipart.Parser` (subtype `.related`) on the same cursor
+    /// (clause-9), then lifts the `Multipart` into `Related`.
+    ///
+    /// - Parameter input: The byte cursor to consume.
+    /// - Returns: The parsed multipart/related value.
+    /// - Throws: `RFC_2387.Related.Error` if parsing fails.
+    public borrowing func parse(
+        _ input: inout Byte.Input
+    ) throws(RFC_2387.Related.Error) -> RFC_2387.Related {
+        // Clause-9: compose RFC_2046.Multipart's own Byte-cursor parse verb.
+        let multipart: RFC_2046.Multipart
+        do throws(RFC_2046.Multipart.Error) {
+            multipart = try RFC_2046.Multipart.Parser(
+                boundary: boundary,
+                subtype: .related
+            ).parse(&input)
+        } catch {
+            throw RFC_2387.Related.Error.multipartError(error)
+        }
+
+        // RFC 2387: the root is the first part.
+        guard let firstPart = multipart.parts.first else {
+            throw RFC_2387.Related.Error.emptyParts
+        }
+        guard let rootType = firstPart.contentType else {
+            throw RFC_2387.Related.Error.missingRootType
+        }
+
+        return RFC_2387.Related(
+            __unchecked: (),
+            multipart: multipart,
+            rootType: rootType,
+            start: nil,
+            startInfo: nil
+        )
+    }
+}
+
+extension RFC_2387.Related {
     /// Parses a multipart/related body from `bytes`, with the parse CONTEXT carried by
     /// the `parser` witness VALUE ([FAM-012] §11 — the ergonomic context-bearing entry).
     ///

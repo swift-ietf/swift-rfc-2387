@@ -122,7 +122,7 @@ extension RFC_2387 {
             }
 
             let multipart: RFC_2046.Multipart
-            do {
+            do throws(RFC_2046.Multipart.Error) {
                 multipart = try RFC_2046.Multipart(
                     subtype: .related,
                     parts: allParts,
