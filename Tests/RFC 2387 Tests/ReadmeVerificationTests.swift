@@ -21,7 +21,12 @@ import Testing
 
 @Suite
 struct `RFC 2387 Related Tests` {
+    @Suite struct Unit {}
+    @Suite struct `Edge Case` {}
+    @Suite struct Integration {}
+}
 
+extension `RFC 2387 Related Tests`.Unit {
     // MARK: - Basic Creation
 
     @Test
@@ -65,6 +70,8 @@ struct `RFC 2387 Related Tests` {
     @Test
     func `Related subtype constant`() {
         let related = RFC_2046.Multipart.Subtype.related
+        // swift-linter:disable:next raw value access
+        // REASON: @testable same-package access exercising the raw representation directly.
         #expect(related.rawValue == "related")
     }
 
