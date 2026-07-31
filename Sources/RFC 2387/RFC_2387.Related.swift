@@ -113,11 +113,11 @@ extension RFC_2387 {
             // RFC 2387 parameters are quoted strings
             var parameters: [RFC_2045.Parameter.Name: String] = [:]
             parameters[.type] = #""\#(rootType.headerValue)""#
-            if let start = start {
+            if let start {
                 // String(start) already produces "<id@domain>" with angle brackets
                 parameters[.start] = #""\#(String(start))""#
             }
-            if let startInfo = startInfo {
+            if let startInfo {
                 parameters[.startInfo] = #""\#(startInfo)""#
             }
 
@@ -251,7 +251,7 @@ extension RFC_2387.Related {
         if let type = detectedRootType {
             parameters[.type] = #""\#(type.headerValue)""#
         }
-        if let start = start {
+        if let start {
             // String(start) produces "<id@domain>" with angle brackets
             parameters[.start] = #""\#(String(start))""#
         }
