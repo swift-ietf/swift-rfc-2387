@@ -109,16 +109,23 @@ extension RFC_2387 {
                 throw Error.missingRootType
             }
 
-            // Build parameters for multipart
-            // RFC 2387 parameters are quoted strings
+            // Build parameters for multipart.
+            //
+            // Values are the RAW parameter values: `RFC_2046.Multipart` validates
+            // them and `RFC_2045.ContentType` applies canonical RFC 2045 quoting
+            // at serialization. Pre-quoting here would embed literal DQUOTEs in
+            // the value, which is not representable.
             var parameters: [RFC_2045.Parameter.Name: String] = [:]
-            parameters[.type] = #""\#(rootType.headerValue)""#
+            // RFC 2387 §3.4: `";" "type" "=" type "/" subtype` — the media type
+            // only. The root part's own parameters (e.g. charset) belong to its
+            // own Content-Type header, not to this parameter.
+            parameters[.type] = Self.typeParameterValue(for: rootType)
             if let start {
                 // String(start) already produces "<id@domain>" with angle brackets
-                parameters[.start] = #""\#(String(start))""#
+                parameters[.start] = String(start)
             }
             if let startInfo {
-                parameters[.startInfo] = #""\#(startInfo)""#
+                parameters[.startInfo] = startInfo
             }
 
             let multipart: RFC_2046.Multipart
@@ -141,6 +148,23 @@ extension RFC_2387 {
                 startInfo: startInfo
             )
         }
+    }
+}
+
+// MARK: - Parameter Values
+
+extension RFC_2387.Related {
+    /// The RFC 2387 `type` parameter value for a root Content-Type.
+    ///
+    /// RFC 2387 §3.4 grammar: `[ ";" "type" "=" type "/" subtype ]`. The value is
+    /// the root body part's media type *only* — its own parameters (`charset`,
+    /// …) stay on the root part's `Content-Type` header and must not be folded
+    /// into this parameter.
+    ///
+    /// The value is returned unquoted; `RFC_2045.ContentType` applies canonical
+    /// RFC 2045 quoting when serializing (the `/` makes it a quoted-string).
+    static func typeParameterValue(for contentType: RFC_2045.ContentType) -> String {
+        "\(contentType.type)/\(contentType.subtype)"
     }
 }
 
@@ -246,14 +270,16 @@ extension RFC_2387.Related {
         // RFC 2387: Auto-detect type from root part if not provided
         let detectedRootType = rootType ?? rootPart.contentType
 
-        // Build parameters (RFC 2387 parameters are quoted strings)
+        // Build parameters. Values are RAW — canonical RFC 2045 quoting is
+        // applied by `RFC_2045.ContentType` at serialization.
         var parameters: [RFC_2045.Parameter.Name: String] = [:]
         if let type = detectedRootType {
-            parameters[.type] = #""\#(type.headerValue)""#
+            // RFC 2387 §3.4: the `type` parameter is `type "/" subtype` only.
+            parameters[.type] = RFC_2387.Related.typeParameterValue(for: type)
         }
         if let start {
             // String(start) produces "<id@domain>" with angle brackets
-            parameters[.start] = #""\#(String(start))""#
+            parameters[.start] = String(start)
         }
 
         return try RFC_2046.Multipart(
