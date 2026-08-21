@@ -1,16 +1,3 @@
-// ===----------------------------------------------------------------------===//
-//
-// This source file is part of the swift-rfc-2387 open source project
-//
-// Copyright (c) 2025 Coen ten Thije Boonkkamp
-// Licensed under Apache License v2.0
-//
-// See LICENSE.txt for license information
-//
-// SPDX-License-Identifier: Apache-2.0
-//
-// ===----------------------------------------------------------------------===//
-
 import Foundation
 import RFC_2045
 import RFC_2046
@@ -27,7 +14,6 @@ struct `RFC 2387 Related Tests` {
 }
 
 extension `RFC 2387 Related Tests`.Unit {
-    // MARK: - Basic Creation
 
     @Test
     func `Creating multipart/related with HTML and inline image`() throws {
@@ -61,7 +47,6 @@ extension `RFC 2387 Related Tests`.Unit {
             content: [.ascii.J, .ascii.P, .ascii.G]
         )
 
-        // Reference in HTML: <img src="cid:logo@example.com">
         #expect(imagePart.contentID == "<logo@example.com>")
         #expect(imagePart.contentType?.type == "image")
         #expect(imagePart.contentType?.subtype == "png")
@@ -70,8 +55,7 @@ extension `RFC 2387 Related Tests`.Unit {
     @Test
     func `Related subtype constant`() {
         let related = RFC_2046.Multipart.Subtype.related
-        // swift-linter:disable:next raw value access
-        // REASON: @testable same-package access exercising the raw representation directly.
+
         #expect(related.rawValue == "related")
     }
 
@@ -86,8 +70,6 @@ extension `RFC 2387 Related Tests`.Unit {
         let contentID = imagePart.contentID
         #expect(contentID == "<test@example.com>")
     }
-
-    // MARK: - Parameters
 
     @Test
     func `Multipart/related with root type parameter`() throws {
@@ -144,8 +126,6 @@ extension `RFC 2387 Related Tests`.Unit {
         #expect(String(related.boundary) == "CustomBoundary123")
     }
 
-    // MARK: - Multiple Parts
-
     @Test
     func `Multiple inline images in multipart/related`() throws {
         let htmlContent = """
@@ -180,21 +160,17 @@ extension `RFC 2387 Related Tests`.Unit {
         #expect(related.parts[2].contentID == "<banner@example.com>")
     }
 
-    // MARK: - Namespace Tests
-
     @Test
     func `RFC_2387 namespace exists`() {
-        // Verify the namespace enum exists and can be referenced
+
         _ = RFC_2387.self
     }
 
     @Test
     func `RFC_2387.Related type exists`() {
-        // Verify the Related struct exists
+
         _ = RFC_2387.Related.self
     }
-
-    // MARK: - Related struct tests
 
     @Test
     func `Creating Related struct directly`() throws {
@@ -223,22 +199,17 @@ extension `RFC 2387 Related Tests`.Unit {
             boundary: boundary
         )
 
-        // Serialize to bytes
         let bytes = [UInt8](related)
 
-        // Should contain the boundary
         let serialized = String(decoding: bytes, as: UTF8.self)
         #expect(serialized.contains("----=_Test_Boundary"))
     }
 
-    // MARK: - Type Safety Tests
-
     @Test
     func `ContentID type is RFC_5322.Message.ID`() throws {
-        // Verify ContentID is properly typed
+
         let contentID: RFC_2387.ContentID = "test@example.com"
 
-        // Should serialize with angle brackets
         let serialized = String(contentID)
         #expect(serialized == "<test@example.com>")
     }
