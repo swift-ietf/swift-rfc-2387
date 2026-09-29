@@ -9,7 +9,7 @@ Swift domain model of RFC 2387: The MIME Multipart/Related Content-type.
 
 RFC 2387 defines the multipart/related content type for compound objects made up of interrelated body parts, commonly used for HTML email with inline images referenced through Content-ID.
 
-This package is a pure domain model: it models `RFC_2387.Related`, its `type`, `start` and `start-info` parameters, and the Content-ID identity of a body part. Wire parsing and serialization live in the coder sibling [swift-rfc-2387-coder](https://github.com/swift-ietf/swift-rfc-2387-coder) (`RFC_2387.Related.Coder`, `RFC_2387.Related.coder(boundary:)` and the `Binary.Serializable` conformance); Apple Foundation bridging lives in the in-package `RFC 2387 Foundation Integration` target.
+This package is a pure domain model: it models `RFC_2387.Related`, its `type`, `start` and `start-info` parameters, and the Content-ID identity of a body part. Wire parsing and serialization live in the in-package `RFC 2387 Coder` target behind the `Coder` trait (`RFC_2387.Related.Coder`, `RFC_2387.Related.coder(boundary:)` and the `Binary.Serializable` conformance); Apple Foundation bridging lives in the in-package `RFC 2387 Foundation Integration` target.
 
 ## Installation
 
@@ -26,6 +26,16 @@ dependencies: [
         .product(name: "RFC 2387", package: "swift-rfc-2387")
     ]
 )
+```
+
+For the wire coder, request the `Coder` trait and depend on the `RFC 2387 Coder` product:
+
+```swift
+.package(url: "https://github.com/swift-ietf/swift-rfc-2387.git", branch: "main", traits: ["Coder"])
+```
+
+```swift
+.product(name: "RFC 2387 Coder", package: "swift-rfc-2387")
 ```
 
 ## Quick Start
@@ -112,12 +122,11 @@ extension RFC_2046.BodyPart {
 - [swift-rfc-2045](https://github.com/swift-ietf/swift-rfc-2045) - MIME Part One: Format of Internet Message Bodies
 - [swift-rfc-2046](https://github.com/swift-ietf/swift-rfc-2046) - MIME Part Two: Media Types
 - [swift-rfc-5322](https://github.com/swift-ietf/swift-rfc-5322) - Internet Message Format
-- [swift-rfc-2387-coder](https://github.com/swift-ietf/swift-rfc-2387-coder) - Wire coder for this package
 
 ## Requirements
 
 - Swift 6.4+
-- macOS 27+ / iOS 27+ / tvOS 27+ / watchOS 27+
+- macOS 27+ / iOS 27+ / tvOS 27+ / watchOS 27+ / visionOS 27+
 
 ## License
 
