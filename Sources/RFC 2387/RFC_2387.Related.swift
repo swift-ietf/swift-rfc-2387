@@ -1,11 +1,11 @@
-import ASCII_Serializer
+public import Byte
 public import RFC_2045
 public import RFC_2046
 public import RFC_5322
 
 extension RFC_2387 {
 
-    public struct Related: Sendable, Hashable, Codable {
+    public struct Related: Sendable, Hashable {
 
         public let multipart: RFC_2046.Multipart
 
@@ -15,7 +15,7 @@ extension RFC_2387 {
 
         public let startInfo: String?
 
-        init(
+        package init(
             __unchecked: Void,
             multipart: RFC_2046.Multipart,
             rootType: RFC_2045.ContentType,
@@ -46,7 +46,7 @@ extension RFC_2387 {
             parameters[.type] = Self.typeParameterValue(for: rootType)
             if let start {
 
-                parameters[.start] = String(start)
+                parameters[.start] = start.description
             }
             if let startInfo {
                 parameters[.startInfo] = startInfo
@@ -84,8 +84,11 @@ extension RFC_2387.Related {
 
 extension RFC_2046.BodyPart {
 
-    public var contentID: String? {
-        headers[.contentId]
+    public var contentID: RFC_2387.ContentID? {
+        guard
+            let header = headers.custom.first(where: { $0.name == RFC_5322.Header.Name.contentId })
+        else { return nil }
+        return try? RFC_2387.ContentID(header.value.rawValue)
     }
 }
 
@@ -96,12 +99,17 @@ extension RFC_2387.Related {
         contentType: RFC_2045.ContentType,
         transferEncoding: RFC_2045.ContentTransferEncoding = .base64,
         content: [Byte]
-    ) -> RFC_2046.BodyPart {
+    ) throws(RFC_5322.Header.Value.Error) -> RFC_2046.BodyPart {
         var headers = RFC_2046.BodyPart.Headers()
         headers.contentType = contentType
         headers.contentTransferEncoding = transferEncoding
 
-        headers[.contentId] = String(contentID)
+        headers.custom.append(
+            RFC_5322.Header(
+                name: .contentId,
+                value: try RFC_5322.Header.Value(contentID.description)
+            )
+        )
 
         return RFC_2046.BodyPart(
             headers: headers,
@@ -127,7 +135,7 @@ extension RFC_2387.Related {
         }
         if let start {
 
-            parameters[.start] = String(start)
+            parameters[.start] = start.description
         }
 
         return try RFC_2046.Multipart(
@@ -141,22 +149,11 @@ extension RFC_2387.Related {
 
 extension RFC_2045.Parameter.Name {
 
-    public static let type = RFC_2045.Parameter.Name(rawValue: "type")
+    public static let type = Self(__unchecked: (), rawValue: "type")
 
-    public static let start = RFC_2045.Parameter.Name(rawValue: "start")
+    public static let start = Self(__unchecked: (), rawValue: "start")
 
-    public static let startInfo = RFC_2045.Parameter.Name(rawValue: "start-info")
-}
-
-extension RFC_2387.Related: Binary.Serializable {
-
-    public static func serialize<Buffer: RangeReplaceableCollection>(
-        _ related: Self,
-        into buffer: inout Buffer
-    ) where Buffer.Element == Byte {
-
-        RFC_2046.Multipart.serialize(related.multipart, into: &buffer)
-    }
+    public static let startInfo = Self(__unchecked: (), rawValue: "start-info")
 }
 
 extension RFC_2387.Related {

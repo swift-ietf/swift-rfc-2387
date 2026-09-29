@@ -3,3 +3,4 @@ builder:
   configs:
   - documentation_targets:
     - RFC 2387
+    - RFC 2387 Foundation Integration

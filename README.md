@@ -1,37 +1,23 @@
 # Swift RFC 2387
 
 ![Development Status](https://img.shields.io/badge/status-active--development-blue.svg)
-[![CI](https://github.com/swift-standards/swift-rfc-2387/workflows/CI/badge.svg)](https://github.com/swift-standards/swift-rfc-2387/actions/workflows/ci.yml)
+[![CI](https://github.com/swift-ietf/swift-rfc-2387/workflows/CI/badge.svg)](https://github.com/swift-ietf/swift-rfc-2387/actions/workflows/ci.yml)
 
-Swift implementation of RFC 2387: The MIME Multipart/Related Content-type.
+Swift domain model of RFC 2387: The MIME Multipart/Related Content-type.
 
 ## Overview
 
-RFC 2387 defines the multipart/related content type for compound objects made up of interrelated body parts. This package provides a pure Swift implementation for creating and managing multipart/related messages, commonly used for HTML emails with inline images where the HTML references images via Content-ID.
+RFC 2387 defines the multipart/related content type for compound objects made up of interrelated body parts, commonly used for HTML email with inline images referenced through Content-ID.
 
-The package extends the RFC 2046 multipart implementation with support for related parts that reference each other through Content-ID headers, following the MIME multipart/related specification.
-
-## Features
-
-- **Multipart/Related Support**: Create compound documents with interrelated parts
-- **Content-ID References**: Reference parts via Content-ID (e.g., `cid:logo@example.com` in HTML)
-- **Inline Images**: Convenience methods for creating inline image parts
-- **Root Type Parameter**: Specify the content type of the root part
-- **Start Parameter**: Identify the root part by Content-ID
-- **Custom Boundaries**: Support for custom boundary strings
-- **Type-Safe API**: Extensions to RFC 2046 types for related content
+This package is a pure domain model: it models `RFC_2387.Related`, its `type`, `start` and `start-info` parameters, and the Content-ID identity of a body part. Wire parsing and serialization live in the coder sibling [swift-rfc-2387-coder](https://github.com/swift-ietf/swift-rfc-2387-coder) (`RFC_2387.Related.Coder`, `RFC_2387.Related.coder(boundary:)` and the `Binary.Serializable` conformance); Apple Foundation bridging lives in the in-package `RFC 2387 Foundation Integration` target.
 
 ## Installation
 
-Add swift-rfc-2387 to your package dependencies:
-
 ```swift
 dependencies: [
-    .package(url: "https://github.com/swift-ietf/swift-rfc-2387.git", from: "0.2.5")
+    .package(url: "https://github.com/swift-ietf/swift-rfc-2387.git", branch: "main")
 ]
 ```
-
-Then add it to your target:
 
 ```swift
 .target(
@@ -44,186 +30,95 @@ Then add it to your target:
 
 ## Quick Start
 
-### Creating Multipart/Related with Inline Images
+### Creating multipart/related with an inline image
 
 ```swift
 import RFC_2045
 import RFC_2046
 import RFC_2387
 
-// Create HTML part with image reference
 let htmlPart = RFC_2046.BodyPart(
     contentType: .textHTMLUTF8,
     text: "<img src='cid:logo@example.com'>"
 )
 
-// Create inline image with Content-ID
-let imagePart = RFC_2046.BodyPart.inlineImage(
-    contentID: "logo@example.com",
-    contentType: RFC_2045.ContentType(type: "image", subtype: "png"),
-    content: imageData
+let imagePart = try RFC_2387.Related.inline(
+    contentID: try RFC_2387.ContentID("logo@example.com"),
+    contentType: .imagePNG,
+    content: imageBytes
 )
 
-// Create multipart/related message
-let related = try RFC_2046.Multipart.related(
+let related = try RFC_2387.Related(
     rootPart: htmlPart,
-    relatedParts: [imagePart]
+    relatedParts: [imagePart],
+    boundary: try RFC_2046.Boundary("----=_Part_1")
 )
 ```
 
-### Using the Related Subtype
+### Reading the Content-ID of a part
 
 ```swift
-import RFC_2046
-import RFC_2387
-
-// Access the related subtype constant
-let subtype = RFC_2046.Multipart.Subtype.related
-// Result: Multipart.Subtype with rawValue "related"
+let contentID: RFC_2387.ContentID? = imagePart.contentID
 ```
 
-### Accessing Content-ID
+## Surface
 
 ```swift
-let imagePart = RFC_2046.BodyPart.inlineImage(
-    contentID: "logo@example.com",
-    contentType: RFC_2045.ContentType(type: "image", subtype: "png"),
-    content: imageData
-)
-
-// Access Content-ID header
-let contentID = imagePart.contentID
-// Result: "<logo@example.com>" (with angle brackets per RFC 2387)
-```
-
-## Usage
-
-### Related Subtype Extension
-
-```swift
-extension RFC_2046.Multipart.Subtype {
-    public static let related: Multipart.Subtype
+extension RFC_2387 {
+    public typealias ContentID = RFC_5322.Message.ID
 }
-```
 
-### Inline Image Factory
+extension RFC_2387 {
+    public struct Related: Sendable, Hashable {
+        public let multipart: RFC_2046.Multipart
+        public let rootType: RFC_2045.ContentType
+        public let start: ContentID?
+        public let startInfo: String?
 
-```swift
-extension RFC_2046.BodyPart {
-    public static func inlineImage(
-        contentID: String,
+        public init(
+            rootPart: RFC_2046.BodyPart,
+            relatedParts: [RFC_2046.BodyPart],
+            boundary: RFC_2046.Boundary,
+            start: ContentID? = nil,
+            startInfo: String? = nil
+        ) throws(Error)
+    }
+}
+
+extension RFC_2387.Related {
+    public static func inline(
+        contentID: RFC_2387.ContentID,
         contentType: RFC_2045.ContentType,
         transferEncoding: RFC_2045.ContentTransferEncoding = .base64,
-        content: Data
-    ) -> Self
-}
-```
+        content: [Byte]
+    ) throws(RFC_5322.Header.Value.Error) -> RFC_2046.BodyPart
 
-### Content-ID Accessor
-
-```swift
-extension RFC_2046.BodyPart {
-    public var contentID: String? { get }
-}
-```
-
-### Creating Multipart/Related
-
-```swift
-extension RFC_2046.Multipart {
-    public static func related(
+    public static func multipart(
         rootPart: RFC_2046.BodyPart,
         relatedParts: [RFC_2046.BodyPart],
+        boundary: RFC_2046.Boundary,
         rootType: RFC_2045.ContentType? = nil,
-        startContentID: String? = nil,
-        boundary: String? = nil
-    ) throws -> Self
+        start: RFC_2387.ContentID? = nil
+    ) throws(RFC_2046.Multipart.Error) -> RFC_2046.Multipart
 }
-```
 
-### Advanced Examples
-
-**Multiple inline images:**
-
-```swift
-let htmlContent = """
-<html>
-    <img src="cid:logo@example.com">
-    <img src="cid:banner@example.com">
-</html>
-"""
-
-let htmlPart = RFC_2046.BodyPart(
-    contentType: .textHTMLUTF8,
-    text: htmlContent
-)
-
-let logoPart = RFC_2046.BodyPart.inlineImage(
-    contentID: "logo@example.com",
-    contentType: RFC_2045.ContentType(type: "image", subtype: "png"),
-    content: logoData
-)
-
-let bannerPart = RFC_2046.BodyPart.inlineImage(
-    contentID: "banner@example.com",
-    contentType: RFC_2045.ContentType(type: "image", subtype: "jpeg"),
-    content: bannerData
-)
-
-let related = try RFC_2046.Multipart.related(
-    rootPart: htmlPart,
-    relatedParts: [logoPart, bannerPart]
-)
-```
-
-**With root type parameter:**
-
-```swift
-let related = try RFC_2046.Multipart.related(
-    rootPart: htmlPart,
-    relatedParts: [imagePart],
-    rootType: .textHTMLUTF8
-)
-```
-
-**With start Content-ID parameter:**
-
-```swift
-let related = try RFC_2046.Multipart.related(
-    rootPart: htmlPart,
-    relatedParts: [],
-    startContentID: "root@example.com"
-)
-```
-
-**With custom boundary:**
-
-```swift
-let related = try RFC_2046.Multipart.related(
-    rootPart: htmlPart,
-    relatedParts: [imagePart],
-    boundary: "CustomBoundary123"
-)
+extension RFC_2046.BodyPart {
+    public var contentID: RFC_2387.ContentID? { get }
+}
 ```
 
 ## Related Packages
 
-### Dependencies
-- [swift-rfc-2045](https://github.com/swift-standards/swift-rfc-2045) - MIME Part One: Format of Internet Message Bodies
-- [swift-rfc-2046](https://github.com/swift-standards/swift-rfc-2046) - MIME Part Two: Media Types
-
-### Related Standards
-- [swift-rfc-2388](https://github.com/swift-standards/swift-rfc-2388) - Returning Values from Forms: multipart/form-data
+- [swift-rfc-2045](https://github.com/swift-ietf/swift-rfc-2045) - MIME Part One: Format of Internet Message Bodies
+- [swift-rfc-2046](https://github.com/swift-ietf/swift-rfc-2046) - MIME Part Two: Media Types
+- [swift-rfc-5322](https://github.com/swift-ietf/swift-rfc-5322) - Internet Message Format
+- [swift-rfc-2387-coder](https://github.com/swift-ietf/swift-rfc-2387-coder) - Wire coder for this package
 
 ## Requirements
 
-- Swift 6.0+
-- macOS 14.0+ / iOS 17.0+ / tvOS 17.0+ / watchOS 10.0+
+- Swift 6.4+
+- macOS 27+ / iOS 27+ / tvOS 27+ / watchOS 27+
 
 ## License
 
-This library is released under the Apache License 2.0. See [LICENSE](LICENSE) for details.
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
+This library is released under the Apache License 2.0. See [LICENSE](LICENSE.md) for details.

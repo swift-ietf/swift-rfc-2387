@@ -1,4 +1,5 @@
-import RFC_2046
+public import RFC_2046
+public import RFC_5322
 
 extension RFC_2387.Related {
 

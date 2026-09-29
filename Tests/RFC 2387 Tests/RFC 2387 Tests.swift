@@ -1,31 +1,25 @@
+import Byte
 import Foundation
 import RFC_2045
 import RFC_2046
+import RFC_2387
 import RFC_5322
 import Testing
 
-@testable import RFC_2387
-
 @Suite
-struct `RFC 2387 Related Tests` {
-    @Suite struct Unit {}
-    @Suite struct `Edge Case` {}
-    @Suite struct Integration {}
-}
-
-extension `RFC 2387 Related Tests`.Unit {
+struct `Related - Building multipart/related` {
 
     @Test
     func `Creating multipart/related with HTML and inline image`() throws {
-        let htmlPart = try RFC_2046.BodyPart(
+        let htmlPart = RFC_2046.BodyPart(
             contentType: .textHTMLUTF8,
             text: "<img src='cid:logo@example.com'>"
         )
 
         let imagePart = try RFC_2387.Related.inline(
-            contentID: "logo@example.com",
+            contentID: try RFC_2387.ContentID("logo@example.com"),
             contentType: .imagePNG,
-            content: [.ascii.P, .ascii.N, .ascii.G]
+            content: [Byte](utf8: "PNG")
         )
 
         let boundary = try RFC_2046.Boundary("----=_Part_\(UUID().uuidString)")
@@ -40,43 +34,11 @@ extension `RFC 2387 Related Tests`.Unit {
     }
 
     @Test
-    func `Using inline convenience method`() throws {
-        let imagePart = try RFC_2387.Related.inline(
-            contentID: "logo@example.com",
-            contentType: .imagePNG,
-            content: [.ascii.J, .ascii.P, .ascii.G]
-        )
-
-        #expect(imagePart.contentID == "<logo@example.com>")
-        #expect(imagePart.contentType?.type == "image")
-        #expect(imagePart.contentType?.subtype == "png")
-    }
-
-    @Test
-    func `Related subtype constant`() {
-        let related = RFC_2046.Multipart.Subtype.related
-
-        #expect(related.rawValue == "related")
-    }
-
-    @Test
-    func `ContentID accessor`() throws {
-        let imagePart = try RFC_2387.Related.inline(
-            contentID: "test@example.com",
-            contentType: .imageGIF,
-            content: []
-        )
-
-        let contentID = imagePart.contentID
-        #expect(contentID == "<test@example.com>")
-    }
-
-    @Test
     func `Multipart/related with root type parameter`() throws {
-        let htmlPart = try RFC_2046.BodyPart(contentType: .textHTMLUTF8, text: "<p>Test</p>")
+        let htmlPart = RFC_2046.BodyPart(contentType: .textHTMLUTF8, text: "<p>Test</p>")
 
         let imagePart = try RFC_2387.Related.inline(
-            contentID: "img@example.com",
+            contentID: try RFC_2387.ContentID("img@example.com"),
             contentType: .imageJPEG,
             content: []
         )
@@ -95,7 +57,7 @@ extension `RFC 2387 Related Tests`.Unit {
 
     @Test
     func `Multipart/related with start Content-ID parameter`() throws {
-        let htmlPart = try RFC_2046.BodyPart(
+        let htmlPart = RFC_2046.BodyPart(
             contentType: .textHTMLUTF8,
             text: "<html><body>Test</body></html>"
         )
@@ -105,7 +67,7 @@ extension `RFC 2387 Related Tests`.Unit {
             rootPart: htmlPart,
             relatedParts: [],
             boundary: boundary,
-            start: "root@example.com"
+            start: try RFC_2387.ContentID("root@example.com")
         )
 
         #expect(related.subtype == .related)
@@ -114,7 +76,7 @@ extension `RFC 2387 Related Tests`.Unit {
 
     @Test
     func `Multipart/related with custom boundary`() throws {
-        let htmlPart = try RFC_2046.BodyPart(contentType: .textHTMLUTF8, text: "<p>Content</p>")
+        let htmlPart = RFC_2046.BodyPart(contentType: .textHTMLUTF8, text: "<p>Content</p>")
 
         let customBoundary = try RFC_2046.Boundary("CustomBoundary123")
         let related = try RFC_2387.Related.multipart(
@@ -123,7 +85,7 @@ extension `RFC 2387 Related Tests`.Unit {
             boundary: customBoundary
         )
 
-        #expect(String(related.boundary) == "CustomBoundary123")
+        #expect(related.boundary == customBoundary)
     }
 
     @Test
@@ -134,18 +96,18 @@ extension `RFC 2387 Related Tests`.Unit {
                 <img src="cid:banner@example.com">
             </html>
             """
-        let htmlPart = try RFC_2046.BodyPart(contentType: .textHTMLUTF8, text: htmlContent)
+        let htmlPart = RFC_2046.BodyPart(contentType: .textHTMLUTF8, text: htmlContent)
 
         let logoPart = try RFC_2387.Related.inline(
-            contentID: "logo@example.com",
+            contentID: try RFC_2387.ContentID("logo@example.com"),
             contentType: .imagePNG,
-            content: [.ascii.l, .ascii.o, .ascii.g, .ascii.o]
+            content: [Byte](utf8: "logo")
         )
 
         let bannerPart = try RFC_2387.Related.inline(
-            contentID: "banner@example.com",
+            contentID: try RFC_2387.ContentID("banner@example.com"),
             contentType: .imageJPEG,
-            content: [.ascii.b, .ascii.a, .ascii.n, .ascii.n, .ascii.e, .ascii.r]
+            content: [Byte](utf8: "banner")
         )
 
         let boundary = try RFC_2046.Boundary("----=_Part_\(UUID().uuidString)")
@@ -156,25 +118,13 @@ extension `RFC 2387 Related Tests`.Unit {
         )
 
         #expect(related.parts.count == 3)
-        #expect(related.parts[1].contentID == "<logo@example.com>")
-        #expect(related.parts[2].contentID == "<banner@example.com>")
-    }
-
-    @Test
-    func `RFC_2387 namespace exists`() {
-
-        _ = RFC_2387.self
-    }
-
-    @Test
-    func `RFC_2387.Related type exists`() {
-
-        _ = RFC_2387.Related.self
+        #expect(related.parts[1].contentID == (try RFC_2387.ContentID("logo@example.com")))
+        #expect(related.parts[2].contentID == (try RFC_2387.ContentID("banner@example.com")))
     }
 
     @Test
     func `Creating Related struct directly`() throws {
-        let htmlPart = try RFC_2046.BodyPart(contentType: .textHTMLUTF8, text: "<p>Test</p>")
+        let htmlPart = RFC_2046.BodyPart(contentType: .textHTMLUTF8, text: "<p>Test</p>")
 
         let boundary = try RFC_2046.Boundary("----=_Part_\(UUID().uuidString)")
         let related = try RFC_2387.Related(
@@ -187,30 +137,39 @@ extension `RFC 2387 Related Tests`.Unit {
         #expect(related.rootType.subtype == "html")
         #expect(related.parts.count == 1)
     }
+}
+
+@Suite
+struct `Related - Content-ID` {
 
     @Test
-    func `Related struct serialization round-trip`() throws {
-        let htmlPart = try RFC_2046.BodyPart(contentType: .textHTMLUTF8, text: "<p>Hello</p>")
-
-        let boundary = try RFC_2046.Boundary("----=_Test_Boundary")
-        let related = try RFC_2387.Related(
-            rootPart: htmlPart,
-            relatedParts: [],
-            boundary: boundary
+    func `Using inline convenience method`() throws {
+        let imagePart = try RFC_2387.Related.inline(
+            contentID: try RFC_2387.ContentID("logo@example.com"),
+            contentType: .imagePNG,
+            content: [Byte](utf8: "JPG")
         )
 
-        let bytes = [UInt8](related)
-
-        let serialized = String(decoding: bytes, as: UTF8.self)
-        #expect(serialized.contains("----=_Test_Boundary"))
+        #expect(imagePart.contentID == (try RFC_2387.ContentID("logo@example.com")))
+        #expect(imagePart.contentType?.type == "image")
+        #expect(imagePart.contentType?.subtype == "png")
     }
 
     @Test
-    func `ContentID type is RFC_5322.Message.ID`() throws {
+    func `Content-ID accessor returns the typed Content-ID`() throws {
+        let imagePart = try RFC_2387.Related.inline(
+            contentID: try RFC_2387.ContentID("test@example.com"),
+            contentType: .imageGIF,
+            content: []
+        )
 
-        let contentID: RFC_2387.ContentID = "test@example.com"
+        #expect(imagePart.contentID == (try RFC_2387.ContentID("test@example.com")))
+    }
 
-        let serialized = String(contentID)
-        #expect(serialized == "<test@example.com>")
+    @Test
+    func `Content-ID is the RFC 5322 message identifier`() throws {
+        let contentID = try RFC_2387.ContentID("test@example.com")
+
+        #expect(contentID.description == "<test@example.com>")
     }
 }
