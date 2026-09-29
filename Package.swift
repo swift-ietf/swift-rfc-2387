@@ -35,7 +35,7 @@ let package = Package(
         .package(url: "https://github.com/swift-ietf/swift-rfc-5322.git", branch: "main"),
         .package(url: "https://github.com/swift-atoms/swift-coder.git", branch: "main"),
         .package(url: "https://github.com/swift-atoms/swift-cursor.git", branch: "main"),
-        .package(url: "https://github.com/swift-atoms/swift-parser.git", branch: "main", traits: [.trait(name: "Append", condition: .when(traits: ["Coder", "Either"])), .trait(name: "IteratorLeaves", condition: .when(traits: ["Coder"])), .trait(name: "Map", condition: .when(traits: ["Coder"])), .trait(name: "Product", condition: .when(traits: ["Coder"])), .trait(name: "Skip", condition: .when(traits: ["Coder"]))]),
+        .package(url: "https://github.com/swift-atoms/swift-parser.git", branch: "main", traits: [.trait(name: "Append", condition: .when(traits: ["Coder"])), .trait(name: "Either", condition: .when(traits: ["Coder"])), .trait(name: "Iterator", condition: .when(traits: ["Coder"])), .trait(name: "IteratorLeaves", condition: .when(traits: ["Coder"])), .trait(name: "Map", condition: .when(traits: ["Coder"])), .trait(name: "Product", condition: .when(traits: ["Coder"])), .trait(name: "Skip", condition: .when(traits: ["Coder"]))]),
         .package(url: "https://github.com/swift-atoms/swift-serializer.git", branch: "main"),
         .package(url: "https://github.com/swift-ietf/swift-rfc-2045-coder.git", branch: "main"),
         .package(url: "https://github.com/swift-ietf/swift-rfc-2046-coder.git", branch: "main"),
