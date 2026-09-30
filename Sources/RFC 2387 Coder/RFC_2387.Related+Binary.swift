@@ -5,7 +5,7 @@ public import RFC_2387
 import RFC_2046
 import RFC_2046_Coder
 
-extension RFC_2387.Related: @retroactive Binary.Serializable {
+extension RFC_2387.Related: Binary.Serializable {
 
     public static func serialize<Buffer: RangeReplaceableCollection>(
         _ related: Self,
