@@ -17,12 +17,29 @@ extension RFC_2387.Related: Encodable, Decodable {
 
     public init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
+        let multipart = try container.decode(RFC_2046.Multipart.self, forKey: .multipart)
+        let rootType = try container.decode(RFC_2045.ContentType.self, forKey: .rootType)
+        let start = try container.decodeIfPresent(RFC_2387.ContentID.self, forKey: .start)
+        let startInfo = try container.decodeIfPresent(String.self, forKey: .startInfo)
+        if let inconsistency = Self.inconsistency(
+            multipart: multipart,
+            rootType: rootType,
+            start: start,
+            startInfo: startInfo
+        ) {
+            throw DecodingError.dataCorrupted(
+                DecodingError.Context(
+                    codingPath: container.codingPath,
+                    debugDescription: inconsistency
+                )
+            )
+        }
         self.init(
             __unchecked: (),
-            multipart: try container.decode(RFC_2046.Multipart.self, forKey: .multipart),
-            rootType: try container.decode(RFC_2045.ContentType.self, forKey: .rootType),
-            start: try container.decodeIfPresent(RFC_2387.ContentID.self, forKey: .start),
-            startInfo: try container.decodeIfPresent(String.self, forKey: .startInfo)
+            multipart: multipart,
+            rootType: rootType,
+            start: start,
+            startInfo: startInfo
         )
     }
 

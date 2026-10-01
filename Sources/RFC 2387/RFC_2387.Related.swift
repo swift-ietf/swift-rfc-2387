@@ -41,6 +41,8 @@ extension RFC_2387 {
                 throw Error.missingRootType
             }
 
+            try Self.validate(start: start, rootPart: rootPart)
+
             var parameters: [RFC_2045.Parameter.Name: String] = [:]
 
             parameters[.type] = Self.typeParameterValue(for: rootType)
@@ -79,6 +81,50 @@ extension RFC_2387.Related {
 
     static func typeParameterValue(for contentType: RFC_2045.ContentType) -> String {
         "\(contentType.type)/\(contentType.subtype)"
+    }
+}
+
+extension RFC_2387.Related {
+
+    package static func validate(
+        start: RFC_2387.ContentID?,
+        rootPart: RFC_2046.BodyPart
+    ) throws(Error) {
+        if let start, rootPart.contentID != start {
+            throw Error.startNotFound(start)
+        }
+    }
+
+    package static func inconsistency(
+        multipart: RFC_2046.Multipart,
+        rootType: RFC_2045.ContentType,
+        start: RFC_2387.ContentID?,
+        startInfo: String?
+    ) -> String? {
+        guard multipart.subtype == .related else {
+            return "multipart subtype is \(multipart.subtype), not related"
+        }
+        guard let rootPart = multipart.parts.first else {
+            return Error.emptyParts.description
+        }
+        guard rootPart.contentType == rootType else {
+            return "rootType does not match the root part's Content-Type"
+        }
+        do throws(Error) {
+            try validate(start: start, rootPart: rootPart)
+        } catch {
+            return error.description
+        }
+        guard multipart.additionalParameters[.type] == typeParameterValue(for: rootType) else {
+            return "type parameter does not describe rootType"
+        }
+        guard multipart.additionalParameters[.start] == start?.description else {
+            return "start parameter does not match start"
+        }
+        guard multipart.additionalParameters[.startInfo] == startInfo else {
+            return "start-info parameter does not match startInfo"
+        }
+        return nil
     }
 }
 

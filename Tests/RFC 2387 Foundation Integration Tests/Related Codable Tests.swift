@@ -22,10 +22,102 @@ struct `Related - Codable` {
         let startInfo: String?
     }
 
+    static func root(id: String) throws -> RFC_2046.BodyPart {
+        try RFC_2387.Related.inline(
+            contentID: try RFC_2387.ContentID(id),
+            contentType: .textHTMLUTF8,
+            content: [Byte](utf8: "<p>Hello</p>")
+        )
+    }
+
+    static func encodedObject(
+        _ mutate: (inout [String: Any]) -> Void
+    ) throws -> Data {
+        let related = try RFC_2387.Related(
+            rootPart: try root(id: "root@example.com"),
+            relatedParts: [
+                try RFC_2387.Related.inline(
+                    contentID: try RFC_2387.ContentID("logo@example.com"),
+                    contentType: .imagePNG,
+                    content: [Byte](utf8: "PNG")
+                )
+            ],
+            boundary: try RFC_2046.Boundary("----=_Test_Boundary"),
+            start: try RFC_2387.ContentID("root@example.com"),
+            startInfo: "-o ps"
+        )
+        var object = try #require(
+            try JSONSerialization.jsonObject(with: try JSONEncoder().encode(related)) as? [String: Any]
+        )
+        mutate(&object)
+        return try JSONSerialization.data(withJSONObject: object)
+    }
+
+    @Test
+    func `Decoding the unmodified encoding of a rooted value succeeds`() throws {
+        let decoded = try JSONDecoder().decode(RFC_2387.Related.self, from: try Self.encodedObject { _ in })
+        #expect(decoded.start == (try RFC_2387.ContentID("root@example.com")))
+        #expect(decoded.parts.count == 2)
+    }
+
+    @Test
+    func `Decoding a non-related multipart subtype throws`() throws {
+        let data = try Self.encodedObject { object in
+            var multipart = object["multipart"] as! [String: Any]
+            multipart["subtype"] = "mixed"
+            object["multipart"] = multipart
+        }
+        #expect(throws: DecodingError.self) {
+            try JSONDecoder().decode(RFC_2387.Related.self, from: data)
+        }
+    }
+
+    @Test
+    func `Decoding a root type that contradicts the root part throws`() throws {
+        let data = try Self.encodedObject { object in
+            var rootType = object["rootType"] as! [String: Any]
+            rootType["subtype"] = "plain"
+            object["rootType"] = rootType
+        }
+        #expect(throws: DecodingError.self) {
+            try JSONDecoder().decode(RFC_2387.Related.self, from: data)
+        }
+    }
+
+    @Test
+    func `Decoding a start that names only a related part throws`() throws {
+        let data = try Self.encodedObject { object in
+            object["start"] = "<logo@example.com>"
+        }
+        #expect(throws: DecodingError.self) {
+            try JSONDecoder().decode(RFC_2387.Related.self, from: data)
+        }
+    }
+
+    @Test
+    func `Decoding without start while the start parameter remains throws`() throws {
+        let data = try Self.encodedObject { object in
+            object["start"] = nil
+        }
+        #expect(throws: DecodingError.self) {
+            try JSONDecoder().decode(RFC_2387.Related.self, from: data)
+        }
+    }
+
+    @Test
+    func `Decoding a start-info that contradicts the parameter throws`() throws {
+        let data = try Self.encodedObject { object in
+            object["startInfo"] = "-o other"
+        }
+        #expect(throws: DecodingError.self) {
+            try JSONDecoder().decode(RFC_2387.Related.self, from: data)
+        }
+    }
+
     @Test
     func `Round-trip preserves start and start-info`() throws {
         let original = try RFC_2387.Related(
-            rootPart: RFC_2046.BodyPart(contentType: .textHTMLUTF8, text: "<p>Hello</p>"),
+            rootPart: try Self.root(id: "root@example.com"),
             relatedParts: [],
             boundary: try RFC_2046.Boundary("----=_Test_Boundary"),
             start: try RFC_2387.ContentID("root@example.com"),
@@ -92,7 +184,7 @@ struct `Related - Codable` {
     @Test
     func `Encoding writes root type, start and start-info fields`() throws {
         let related = try RFC_2387.Related(
-            rootPart: RFC_2046.BodyPart(contentType: .textHTMLUTF8, text: "<p>Hello</p>"),
+            rootPart: try Self.root(id: "root@example.com"),
             relatedParts: [],
             boundary: try RFC_2046.Boundary("----=_Test_Boundary"),
             start: try RFC_2387.ContentID("root@example.com"),
@@ -124,7 +216,7 @@ struct `Related - Codable` {
     @Test
     func `Decoding a start without an at sign throws`() throws {
         let related = try RFC_2387.Related(
-            rootPart: RFC_2046.BodyPart(contentType: .textHTMLUTF8, text: "<p>Hello</p>"),
+            rootPart: try Self.root(id: "root@example.com"),
             relatedParts: [],
             boundary: try RFC_2046.Boundary("----=_Test_Boundary"),
             start: try RFC_2387.ContentID("root@example.com")

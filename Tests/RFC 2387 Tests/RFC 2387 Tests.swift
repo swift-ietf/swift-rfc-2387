@@ -173,3 +173,88 @@ struct `Related - Content-ID` {
         #expect(contentID.description == "<test@example.com>")
     }
 }
+
+@Suite
+struct `Related - start names the root part` {
+
+    static func root(id: String?) throws -> RFC_2046.BodyPart {
+        guard let id else {
+            return RFC_2046.BodyPart(contentType: .textHTMLUTF8, text: "<p>Root</p>")
+        }
+        return try RFC_2387.Related.inline(
+            contentID: try RFC_2387.ContentID(id),
+            contentType: .textHTMLUTF8,
+            content: [Byte](utf8: "<p>Root</p>")
+        )
+    }
+
+    static func image(id: String) throws -> RFC_2046.BodyPart {
+        try RFC_2387.Related.inline(
+            contentID: try RFC_2387.ContentID(id),
+            contentType: .imagePNG,
+            content: [Byte](utf8: "PNG")
+        )
+    }
+
+    @Test
+    func `start equal to the root Content-ID is accepted`() throws {
+        let related = try RFC_2387.Related(
+            rootPart: try Self.root(id: "root@example.com"),
+            relatedParts: [try Self.image(id: "logo@example.com")],
+            boundary: try RFC_2046.Boundary("b"),
+            start: try RFC_2387.ContentID("root@example.com")
+        )
+        #expect(related.start == (try RFC_2387.ContentID("root@example.com")))
+        #expect(related.rootPart?.contentID == related.start)
+    }
+
+    @Test
+    func `absent start accepts a root without a Content-ID`() throws {
+        let related = try RFC_2387.Related(
+            rootPart: try Self.root(id: nil),
+            relatedParts: [try Self.image(id: "logo@example.com")],
+            boundary: try RFC_2046.Boundary("b")
+        )
+        #expect(related.start == nil)
+        #expect(related.parts.count == 2)
+    }
+
+    @Test
+    func `start with a root that has no Content-ID is refused`() throws {
+        let start = try RFC_2387.ContentID("root@example.com")
+        #expect(throws: RFC_2387.Related.Error.startNotFound(start)) {
+            try RFC_2387.Related(
+                rootPart: try Self.root(id: nil),
+                relatedParts: [],
+                boundary: try RFC_2046.Boundary("b"),
+                start: start
+            )
+        }
+    }
+
+    @Test
+    func `start different from the root Content-ID is refused`() throws {
+        let start = try RFC_2387.ContentID("other@example.com")
+        #expect(throws: RFC_2387.Related.Error.startNotFound(start)) {
+            try RFC_2387.Related(
+                rootPart: try Self.root(id: "root@example.com"),
+                relatedParts: [],
+                boundary: try RFC_2046.Boundary("b"),
+                start: start
+            )
+        }
+    }
+
+    @Test
+    func `start naming only a related part is refused`() throws {
+        let start = try RFC_2387.ContentID("logo@example.com")
+        #expect(throws: RFC_2387.Related.Error.startNotFound(start)) {
+            try RFC_2387.Related(
+                rootPart: try Self.root(id: "root@example.com"),
+                relatedParts: [try Self.image(id: "logo@example.com")],
+                boundary: try RFC_2046.Boundary("b"),
+                start: start
+            )
+        }
+    }
+}

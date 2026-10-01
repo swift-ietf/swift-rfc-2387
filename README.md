@@ -95,6 +95,11 @@ extension RFC_2387 {
     }
 }
 
+// `start`, when given, must be the Content-ID of `rootPart`; a missing or different
+// root Content-ID (including one that only a related part carries) throws
+// `Error.startNotFound(start)`. Decoding (Foundation Integration) rejects JSON whose
+// multipart, rootType, start and start-info disagree with a `DecodingError`.
+
 extension RFC_2387.Related {
     public static func inline(
         contentID: RFC_2387.ContentID,
