@@ -170,6 +170,10 @@ extension RFC_2387.Related {
         rootType: RFC_2045.ContentType? = nil,
         start: RFC_2387.ContentID? = nil
     ) throws(RFC_2046.Multipart.Error) -> RFC_2046.Multipart {
+        if let start, rootPart.contentID != start {
+            throw .invalidParameterValue(name: "start", value: start.description)
+        }
+
         let allParts = [rootPart] + relatedParts
 
         let detectedRootType = rootType ?? rootPart.contentType

@@ -95,6 +95,11 @@ extension RFC_2387 {
     }
 }
 
+// `multipart(rootPart:…start:)` applies the same rule and throws
+// `RFC_2046.Multipart.Error.invalidParameterValue(name: "start", value:)` on a mismatch.
+// `Coder.init(boundary:)` parses the body only: it never sees the enclosing
+// Content-Type header, so it takes the first part as the root (RFC 2387 §3 fallback)
+// and does not read or validate `type`/`start`.
 // `start`, when given, must be the Content-ID of `rootPart`; a missing or different
 // root Content-ID (including one that only a related part carries) throws
 // `Error.startNotFound(start)`. Decoding (Foundation Integration) rejects JSON whose
