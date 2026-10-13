@@ -3,7 +3,7 @@ public import RFC_5322
 
 extension RFC_2387.Related {
 
-    public enum Error: Swift.Error, Sendable, Equatable {
+    public enum Error: Swift::Error, Sendable, Equatable {
 
         case emptyParts
 
