@@ -63,7 +63,9 @@ struct `Related - Codable` {
     @Test
     func `Decoding a non-related multipart subtype throws`() throws {
         let data = try Self.encodedObject { object in
-            var multipart = object["multipart"] as! [String: Any]
+            guard var multipart = object["multipart"] as? [String: Any] else {
+                preconditionFailure("encoded object has no multipart dictionary")
+            }
             multipart["subtype"] = "mixed"
             object["multipart"] = multipart
         }
@@ -75,7 +77,9 @@ struct `Related - Codable` {
     @Test
     func `Decoding a root type that contradicts the root part throws`() throws {
         let data = try Self.encodedObject { object in
-            var rootType = object["rootType"] as! [String: Any]
+            guard var rootType = object["rootType"] as? [String: Any] else {
+                preconditionFailure("encoded object has no rootType dictionary")
+            }
             rootType["subtype"] = "plain"
             object["rootType"] = rootType
         }
