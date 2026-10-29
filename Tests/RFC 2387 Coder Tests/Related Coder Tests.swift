@@ -3,7 +3,6 @@
     import Byte
     import RFC_2045
     import RFC_2046
-    import RFC_2046_Coder
     import RFC_2387
     import RFC_2387_Coder
     import RFC_5322

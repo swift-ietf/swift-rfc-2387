@@ -3,7 +3,6 @@
     public import Byte
     public import RFC_2387
     import RFC_2046
-    import RFC_2046_Coder
 
     extension RFC_2387.Related: Binary.Serializable {
 

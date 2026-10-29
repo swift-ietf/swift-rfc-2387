@@ -6,7 +6,6 @@
     public import RFC_2387
     import Binary
     import Parser
-    import RFC_2046_Coder
     import Serializer
 
     extension RFC_2387.Related {

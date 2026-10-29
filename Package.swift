@@ -31,7 +31,7 @@ let package = Package(
     dependencies: [
         .package(url: "https://github.com/swift-atoms/swift-byte.git", branch: "main"),
         .package(url: "https://github.com/swift-ietf/swift-rfc-2045.git", branch: "main", traits: [.trait(name: "Coder", condition: .when(traits: ["Coder"]))]),
-        .package(url: "https://github.com/swift-ietf/swift-rfc-2046.git", branch: "main"),
+        .package(url: "https://github.com/swift-ietf/swift-rfc-2046.git", branch: "main", traits: [.trait(name: "Coder", condition: .when(traits: ["Coder"]))]),
         .package(url: "https://github.com/swift-ietf/swift-rfc-5322.git", branch: "main"),
         .package(url: "https://github.com/swift-atoms/swift-coder.git", branch: "main"),
         .package(url: "https://github.com/swift-atoms/swift-cursor.git", branch: "main"),
@@ -45,7 +45,6 @@ let package = Package(
             ]
         ),
         .package(url: "https://github.com/swift-atoms/swift-serializer.git", branch: "main"),
-        .package(url: "https://github.com/swift-ietf/swift-rfc-2046-coder.git", branch: "main"),
         .package(url: "https://github.com/swift-atoms/swift-binary.git", branch: "main", traits: [.trait(name: "Serializer", condition: .when(traits: ["Coder"]))]),
     ],
     targets: [
@@ -90,7 +89,6 @@ let package = Package(
                 .product(name: "Serializer", package: "swift-serializer", condition: .when(traits: ["Coder"])),
                 .product(name: "RFC 2045", package: "swift-rfc-2045"),
                 .product(name: "RFC 2046", package: "swift-rfc-2046"),
-                .product(name: "RFC 2046 Coder", package: "swift-rfc-2046-coder", condition: .when(traits: ["Coder"])),
                 .product(name: "RFC 5322", package: "swift-rfc-5322"),
                 .product(name: "Binary", package: "swift-binary", condition: .when(traits: ["Coder"])),
             ]
@@ -126,7 +124,6 @@ let package = Package(
                 .product(name: "Cursor", package: "swift-cursor", condition: .when(traits: ["Coder"])),
                 .product(name: "RFC 2045", package: "swift-rfc-2045"),
                 .product(name: "RFC 2046", package: "swift-rfc-2046"),
-                .product(name: "RFC 2046 Coder", package: "swift-rfc-2046-coder", condition: .when(traits: ["Coder"])),
                 .product(name: "RFC 5322", package: "swift-rfc-5322"),
                 .product(name: "Binary", package: "swift-binary", condition: .when(traits: ["Coder"])),
             ]
