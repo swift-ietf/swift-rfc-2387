@@ -8,9 +8,9 @@
     import RFC_5322
     import Testing
 
-enum `Related Coder Tests` {}
+    enum `Related Coder Tests` {}
 
-extension `Related Coder Tests` {
+    extension `Related Coder Tests` {
         @Suite
         struct `Related - Coder round trip` {
             @Test
@@ -80,9 +80,9 @@ extension `Related Coder Tests` {
                 #expect([Byte](related) == [Byte](related.multipart))
             }
         }
-}
+    }
 
-extension `Related Coder Tests` {
+    extension `Related Coder Tests` {
         @Suite
         struct `Related - Coder rejections` {
             @Test
@@ -110,5 +110,5 @@ extension `Related Coder Tests` {
                 }
             }
         }
-}
+    }
 #endif

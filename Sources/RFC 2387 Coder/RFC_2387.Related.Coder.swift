@@ -27,7 +27,7 @@
         }
     }
 
-extension RFC_2387.Related.Coder {
+    extension RFC_2387.Related.Coder {
         public typealias Output = RFC_2387.Related
 
         public typealias Failure = RFC_2387.Related.Error
@@ -69,5 +69,5 @@ extension RFC_2387.Related.Coder {
         ) throws(Failure) {
             RFC_2046.Multipart.serialize(output.multipart, into: &buffer)
         }
-}
+    }
 #endif
