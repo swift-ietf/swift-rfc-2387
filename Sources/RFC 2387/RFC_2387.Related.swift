@@ -167,33 +167,14 @@ extension RFC_2387.Related {
         rootPart: RFC_2046.BodyPart,
         relatedParts: [RFC_2046.BodyPart],
         boundary: RFC_2046.Boundary,
-        rootType: RFC_2045.ContentType? = nil,
         start: RFC_2387.ContentID? = nil
-    ) throws(RFC_2046.Multipart.Error) -> RFC_2046.Multipart {
-        if let start, rootPart.contentID != start {
-            throw .invalidParameterValue(name: "start", value: start.description)
-        }
-
-        let allParts = [rootPart] + relatedParts
-
-        let detectedRootType = rootType ?? rootPart.contentType
-
-        var parameters: [RFC_2045.Parameter.Name: String] = [:]
-        if let type = detectedRootType {
-
-            parameters[.type] = RFC_2387.Related.typeParameterValue(for: type)
-        }
-        if let start {
-
-            parameters[.start] = start.description
-        }
-
-        return try RFC_2046.Multipart(
-            subtype: .related,
-            parts: allParts,
+    ) throws(Error) -> RFC_2046.Multipart {
+        try Self(
+            rootPart: rootPart,
+            relatedParts: relatedParts,
             boundary: boundary,
-            additionalParameters: parameters
-        )
+            start: start
+        ).multipart
     }
 }
 

@@ -50,12 +50,12 @@ extension `RFC 2387 Tests` {
             let related = try RFC_2387.Related.multipart(
                 rootPart: htmlPart,
                 relatedParts: [imagePart],
-                boundary: boundary,
-                rootType: .textHTMLUTF8
+                boundary: boundary
             )
 
             #expect(related.subtype == .related)
             #expect(related.parts.count == 2)
+            #expect(related.additionalParameters[.type] == "text/html")
         }
 
         @Test
@@ -314,8 +314,8 @@ extension `RFC 2387 Tests` {
         }
 
         @Test
-        func `a start different from the root Content-ID throws invalidParameterValue`() throws {
-            #expect(throws: RFC_2046.Multipart.Error.invalidParameterValue(name: "start", value: "<other@example.com>")) {
+        func `a start different from the root Content-ID throws startNotFound`() throws {
+            #expect(throws: RFC_2387.Related.Error.startNotFound(try RFC_2387.ContentID("other@example.com"))) {
                 try RFC_2387.Related.multipart(
                     rootPart: try Self.part(id: "root@example.com"),
                     relatedParts: [],
@@ -326,8 +326,8 @@ extension `RFC 2387 Tests` {
         }
 
         @Test
-        func `a start with a root that has no Content-ID throws invalidParameterValue`() throws {
-            #expect(throws: RFC_2046.Multipart.Error.invalidParameterValue(name: "start", value: "<root@example.com>")) {
+        func `a start with a root that has no Content-ID throws startNotFound`() throws {
+            #expect(throws: RFC_2387.Related.Error.startNotFound(try RFC_2387.ContentID("root@example.com"))) {
                 try RFC_2387.Related.multipart(
                     rootPart: try Self.part(id: nil),
                     relatedParts: [],
@@ -338,8 +338,8 @@ extension `RFC 2387 Tests` {
         }
 
         @Test
-        func `a start naming only a related part throws invalidParameterValue`() throws {
-            #expect(throws: RFC_2046.Multipart.Error.invalidParameterValue(name: "start", value: "<logo@example.com>")) {
+        func `a start naming only a related part throws startNotFound`() throws {
+            #expect(throws: RFC_2387.Related.Error.startNotFound(try RFC_2387.ContentID("logo@example.com"))) {
                 try RFC_2387.Related.multipart(
                     rootPart: try Self.part(id: "root@example.com"),
                     relatedParts: [try Self.image(id: "logo@example.com")],
@@ -347,6 +347,30 @@ extension `RFC 2387 Tests` {
                     start: try RFC_2387.ContentID("logo@example.com")
                 )
             }
+        }
+
+        @Test
+        func `a root without a Content-Type throws missingRootType`() throws {
+            var headers = RFC_2046.BodyPart.Headers()
+            headers.contentTransferEncoding = .base64
+            let root = RFC_2046.BodyPart(headers: headers, content: RFC_2046.BodyPart.Content([Byte](utf8: "x")))
+            #expect(throws: RFC_2387.Related.Error.missingRootType) {
+                try RFC_2387.Related.multipart(
+                    rootPart: root,
+                    relatedParts: [],
+                    boundary: try RFC_2046.Boundary("b")
+                )
+            }
+        }
+
+        @Test
+        func `the type parameter is the root's Content-Type without its parameters`() throws {
+            let multipart = try RFC_2387.Related.multipart(
+                rootPart: try Self.part(id: nil),
+                relatedParts: [try Self.image(id: "logo@example.com")],
+                boundary: try RFC_2046.Boundary("b")
+            )
+            #expect(multipart.additionalParameters[.type] == "text/html")
         }
     }
 }
